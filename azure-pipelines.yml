@@ -1,0 +1,35 @@
+variables:
+- group: docker
+- name: MAVEN_CACHE_FOLDER
+  value: $(Pipeline.Workspace)/.m2/repository
+- name: MAVEN_OPTS
+  value: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+
+trigger:
+- main
+pr:
+- main
+
+pool: dhl-build-pool
+
+steps:
+- task: Cache@2
+  inputs:
+    key: 'maven | "$(Agent.OS)" | **/pom.xml'
+    restoreKeys: |
+      maven | "$(Agent.OS)"
+      maven
+    path: $(MAVEN_CACHE_FOLDER)
+  displayName: Cache Maven local repo
+
+- task: JavaToolInstaller@0
+  inputs:
+    versionSpec: '17'
+    jdkArchitectureOption: 'x64'
+    jdkSourceOption: 'PreInstalled'
+
+- script: ./mvnw install -V -B -e -Dquarkus.container-image.push=true
+  displayName: Quarkus build and push
+  env:
+    QUARKUS_CONTAINER_IMAGE_USERNAME: $(DOCKER_USER)
+    QUARKUS_CONTAINER_IMAGE_PASSWORD: $(DOCKER_PASSWORD)
