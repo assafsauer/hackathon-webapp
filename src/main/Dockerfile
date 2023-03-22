@@ -1,20 +1,19 @@
-###
-FROM maven:3.8.4-openjdk-17-slim AS build
+FROM registry.access.redhat.com/ubi8/openjdk-17:1.14 as builder
 
-WORKDIR /build
-COPY . .
+COPY . /opt/source/
+WORKDIR /opt/source
 
-RUN mvn -B clean package -DskipTests
+RUN ./mvnw package
 
-
-FROM registry.access.redhat.com/ubi8/openjdk-17:1.14
+FROM registry.access.redhat.com/ubi8/openjdk-17:1.14 as runtime
 
 ENV LANGUAGE='en_US:en'
 
-COPY --from=build /build/target/quarkus-app/lib/ /deployments/lib/
-COPY --from=build /build/target/quarkus-app/*.jar /deployments/
-COPY --from=build /build/target/quarkus-app/app/ /deployments/app/
-COPY --from=build /build/target/quarkus-app/quarkus/ /deployments/quarkus/
+
+COPY --from=builder --chown=185 /opt/source/target/quarkus-app/lib/ /deployments/lib/
+COPY --from=builder --chown=185 /opt/source/target/quarkus-app/*.jar /deployments/
+COPY --from=builder --chown=185 /opt/source/target/quarkus-app/app/ /deployments/app/
+COPY --from=builder --chown=185 /opt/source/target/quarkus-app/quarkus/ /deployments/quarkus/
 
 EXPOSE 8080
 USER 185
