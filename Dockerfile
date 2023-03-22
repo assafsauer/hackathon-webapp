@@ -1,18 +1,9 @@
 FROM registry.access.redhat.com/ubi8/openjdk-17:1.14 as builder
 
-RUN curl -fsSL https://github.com/takari/maven-wrapper/archive/refs/tags/maven-wrapper-0.5.6.tar.gz -o maven-wrapper.tar.gz \
-    && tar -xzf maven-wrapper.tar.gz \
-    && rm maven-wrapper.tar.gz \
-    && cd maven-wrapper-* \
-    && ./mvnw --version \
-    && mv ./mvnw /usr/bin/mvnw \
-    && cd .. \
-    && rm -r maven-wrapper-*
-
-COPY . /opt/source/
+COPY --chown=185 . /opt/source/
 WORKDIR /opt/source
 
-RUN /usr/bin/mvnw package
+RUN ./mvnw package -q -Dquarkus.container-image.build=false
 
 FROM registry.access.redhat.com/ubi8/openjdk-17:1.14 as runtime
 
